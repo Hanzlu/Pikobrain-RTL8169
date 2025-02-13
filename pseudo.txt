@@ -1,0 +1,31 @@
+This is a description of what the code does.
+
+1. Reset the network card
+2. Setup a variable buffer (contains IP and MAC addresses of other (e.g. the router) devices etc.)
+3. Setup the Rx and Tx descriptors (descriptors point to memory areas containing data packets)
+4. Configure the network card
+5. Create a DHCP_discover packet and sends it
+6. Wait for a received packet by polling
+  a. If nothing happens within a certain time frame: print a "?"
+  b. If user presses enter goto stage 20, else goto stage 6.
+7. When received, read the packet data, and store relevant values (e.g. IP addresses) depending on protocols used
+8. Restore the Rx descriptor used
+9. Check if any automatic action is needed to be done (e.g. reply to DHCP, ARP or PING) and do those. Then goto stage 6.
+  a. If not, goto stage 6. (Wait for some packet to arrive. Just anything.)
+
+20. Ask the user to press a key, to get a command. Possible commands are
+  - space, goto stage 6. (Wait for some packet to arrive)
+  - "a", create and send an ARP request
+  - "p", create and send a PING request
+  - "r", goto stage 1 (reset the network card)
+
+The creation of data packets follows a simple linear process with function calls.
+If we know that we want to send a DHCP discover we simply call the function DHCPDIS
+The package will be written from start to finish, without multiple iterations (except if checksum calculation can be called that).
+The function itself makes a call to the ETH function which writes the ETHERNET part.
+Then another call is made to the IP function which continues by filling in the IP part.
+Then the UDP function fills in the UDP information.
+Then a call is made to the DHCP function, which simply continues where the pointer is at. It fills in the DHCP protocol.
+Through this linear process the entire packet is built up, without the need of going backwards.
+The reason this is possible is because all created packets are 500 bytes in size. If the actual packet data is less than this, it is simply filled with null values.
+This means that an unnecessary amount of bits get sent through the cable, but the degree to which it makes coding a bit simpler was the reason this design choise was made.
